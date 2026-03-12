@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>情绪日记</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #2c3e50;
+        }
+
+        .error {
+            background: #fee;
+            border: 1px solid #fcc;
+            color: #c00;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .diary-card {
+            background: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .diary-meta {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 15px;
+        }
+
+        .diary-content-wrapper {
+            margin-bottom: 15px;
+        }
+
+        .diary-content {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .diary-content.collapsed {
+            max-height: 120px;
+        }
+
+        .diary-content.expanded {
+            max-height: none;
+        }
+
+        .diary-content-toggle {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 12px;
+            font-size: 13px;
+            color: #666;
+            background: transparent;
+            border: 1px solid #ccc;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .diary-content-toggle:hover {
+            background: #666;
+            color: #fff;
+            border-color: #666;
+        }
+
+        .diary-content-label,
+        .ai-feedback-label {
+            font-weight: bold;
+            font-size: 14px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .ai-feedback-wrapper {
+            margin-bottom: 15px;
+        }
+
+        .ai-feedback {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid #3498db;
+            white-space: pre-wrap;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+        }
+
+        .ai-feedback.collapsed {
+            max-height: 120px; /* ~4-5 lines */
+        }
+
+        .ai-feedback.expanded {
+            max-height: none;
+        }
+
+        .ai-feedback-toggle {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 4px 12px;
+            font-size: 13px;
+            color: #3498db;
+            background: transparent;
+            border: 1px solid #3498db;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .ai-feedback-toggle:hover {
+            background: #3498db;
+            color: #fff;
+        }
+
+        .comments-section {
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+            margin-top: 15px;
+        }
+
+        .comments-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #555;
+            margin-bottom: 10px;
+        }
+
+        .comments-list {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .comment {
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            border-radius: 12px;
+            max-width: 85%;
+        }
+
+        .comment.visitor {
+            background: #e8f5e9;
+            margin-right: auto;
+            border-bottom-left-radius: 4px;
+        }
+
+        .comment.admin, .comment.assistant, .comment.analyst, .comment.ai {
+            background: #e3f2fd;
+            margin-left: auto;
+            border-bottom-right-radius: 4px;
+        }
+
+        .comment-role {
+            font-weight: bold;
+            font-size: 13px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .comment-content {
+            font-size: 14px;
+        }
+
+        .comment-time {
+            font-size: 12px;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .comment-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .comment-input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+        }
+
+        .comment-input:focus {
+            border-color: #3498db;
+        }
+
+        .comment-submit {
+            padding: 10px 20px;
+            background: #3498db;
+            color: #fff;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .comment-submit:hover {
+            background: #2980b9;
+        }
+
+        .comment-submit:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .no-comments {
+            color: #999;
+            font-size: 14px;
+            font-style: italic;
+        }
+
+        .no-diaries {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <h1>情绪日记</h1>
+    <div id="app">
+        <div class="loading">加载中...</div>
+    </div>
+
+    <script>
+        // Get visitorId from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const visitorId = urlParams.get('visitorId');
+
+        const app = document.getElementById('app');
+
+        // Format date for display
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return date.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        // Fetch diaries for the visitor
+        async function fetchDiaries() {
+            const response = await fetch(`/api/diaries?visitorId=${encodeURIComponent(visitorId)}`);
+            if (!response.ok) throw new Error('Failed to fetch diaries');
+            return response.json();
+        }
+
+        // Fetch comments for a diary
+        async function fetchComments(diaryId) {
+            const response = await fetch(`/api/comments?diaryId=${encodeURIComponent(diaryId)}`);
+            if (!response.ok) throw new Error('Failed to fetch comments');
+            return response.json();
+        }
+
+        // Post a new comment
+        async function postComment(diaryId, content) {
+            const response = await fetch('/api/comment', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ diaryId, visitorId, content })
+            });
+            if (!response.ok) throw new Error('Failed to post comment');
+            return response.json();
+        }
+
+        // Render a single comment
+        function renderComment(comment) {
+            const role = comment.role || 'visitor';
+            const roleClass = role.toLowerCase();
+            // 角色显示名称映射
+            const roleNames = {
+                'visitor': '我',
+                'admin': '咨询师',
+                'assistant': '咨询师',
+                'analyst': '咨询师',
+                'ai': 'AI'
+            };
+            const roleDisplay = roleNames[roleClass] || role;
+            return `
+                <div class="comment ${roleClass}">
+                    <div class="comment-role">${roleDisplay}</div>
+                    <div class="comment-content">${escapeHtml(comment.content)}</div>
+                    <div class="comment-time">${formatDate(comment.created)}</div>
+                </div>
+            `;
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Render comments section
+        function renderCommentsSection(diaryId, comments) {
+            const commentsHtml = comments.length > 0
+                ? comments.map(renderComment).join('')
+                : '<div class="no-comments">暂无评论</div>';
+
+            return `
+                <div class="comments-section">
+                    <div class="comments-title">评论</div>
+                    <div class="comments-list" id="comments-${diaryId}">
+                        ${commentsHtml}
+                    </div>
+                    <form class="comment-form" onsubmit="handleCommentSubmit(event, '${diaryId}')">
+                        <input type="text" class="comment-input" placeholder="写评论..." required id="input-${diaryId}">
+                        <button type="submit" class="comment-submit">发送</button>
+                    </form>
+                </div>
+            `;
+        }
+
+        // Toggle content expand/collapse
+        function toggleContent(button, contentId) {
+            const content = document.getElementById(contentId);
+            const isCollapsed = content.classList.contains('collapsed');
+
+            if (isCollapsed) {
+                content.classList.remove('collapsed');
+                content.classList.add('expanded');
+                button.textContent = '收起';
+            } else {
+                content.classList.remove('expanded');
+                content.classList.add('collapsed');
+                button.textContent = '展开更多';
+            }
+        }
+
+        // Render a diary card
+        function renderDiaryCard(diary, comments, index) {
+            const diaryContentId = `diary-content-${index}`;
+            const feedbackId = `ai-feedback-${index}`;
+            return `
+                <div class="diary-card">
+                    <div class="diary-meta">${formatDate(diary.when)}</div>
+                    <div class="diary-content-label">情绪日记</div>
+                    <div class="diary-content-wrapper">
+                        <div class="diary-content collapsed" id="${diaryContentId}">${escapeHtml(diary.content)}</div>
+                        <button class="diary-content-toggle" onclick="toggleContent(this, '${diaryContentId}')">展开更多</button>
+                    </div>
+                    ${diary.aiFeedback ? `
+                        <div class="ai-feedback-label">AI 反馈</div>
+                        <div class="ai-feedback-wrapper">
+                            <div class="ai-feedback collapsed" id="${feedbackId}">${escapeHtml(diary.aiFeedback)}</div>
+                            <button class="ai-feedback-toggle" onclick="toggleContent(this, '${feedbackId}')">展开更多</button>
+                        </div>
+                    ` : ''}
+                    ${renderCommentsSection(diary.id, comments)}
+                </div>
+            `;
+        }
+
+        // Handle comment form submission
+        async function handleCommentSubmit(event, diaryId) {
+            event.preventDefault();
+            const input = document.getElementById(`input-${diaryId}`);
+            const content = input.value.trim();
+            if (!content) return;
+
+            const submitBtn = event.target.querySelector('button');
+            submitBtn.disabled = true;
+            submitBtn.textContent = '发送中...';
+
+            try {
+                const result = await postComment(diaryId, content);
+                // Add new comment to the list
+                const commentsList = document.getElementById(`comments-${diaryId}`);
+                const noComments = commentsList.querySelector('.no-comments');
+                if (noComments) noComments.remove();
+
+                commentsList.insertAdjacentHTML('beforeend', renderComment(result.comment));
+                input.value = '';
+            } catch (error) {
+                alert('发送失败: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = '发送';
+            }
+        }
+
+        // Main render function
+        async function render() {
+            if (!visitorId) {
+                app.innerHTML = '<div class="error">缺少 visitorId 参数。请使用 /?visitorId=xxx 访问。</div>';
+                return;
+            }
+
+            try {
+                const diaries = await fetchDiaries();
+
+                if (diaries.length === 0) {
+                    app.innerHTML = '<div class="no-diaries">暂无日记记录</div>';
+                    return;
+                }
+
+                // Fetch comments for all diaries in parallel
+                // Use diary.id (Airtable record ID) for linked record queries
+                const commentsPromises = diaries.map(d => fetchComments(d.id));
+                const allComments = await Promise.all(commentsPromises);
+
+                // Render all diary cards
+                const html = diaries.map((diary, index) =>
+                    renderDiaryCard(diary, allComments[index], index)
+                ).join('');
+
+                app.innerHTML = html;
+
+                // Hide toggle buttons for short content
+                document.querySelectorAll('.collapsed').forEach(el => {
+                    if (el.scrollHeight <= 120) {
+                        el.classList.remove('collapsed');
+                        el.classList.add('expanded');
+                        const toggle = el.parentElement.querySelector('button');
+                        if (toggle) toggle.style.display = 'none';
+                    }
+                });
+
+            } catch (error) {
+                app.innerHTML = `<div class="error">加载失败: ${escapeHtml(error.message)}</div>`;
+            }
+        }
+
+        // Start the app
+        render();
+    </script>
+</body>
+</html>
